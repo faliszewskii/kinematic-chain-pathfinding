@@ -9,13 +9,18 @@
 Gui::Gui(AppContext &appContext) : appContext(appContext) {}
 
 void Gui::render() {
-    ImGui::Begin("Sceme");
-    // TODO --- ImGUI User Interface goes here.
-    renderLightUI(*appContext.light);
-    ImGui::End();
-}
+    ImGui::Begin("Kinematic chain pathfinding");
+    ImGui::DragFloat("l1", &appContext.kinematicChain->l1, 0.01, 0.01, 3);
+    ImGui::DragFloat("l2", &appContext.kinematicChain->l2, 0.01, 0.01, 3);
 
-void Gui::renderLightUI(PointLight &light) {
-    ImGui::ColorPicker3("Light Color", glm::value_ptr(light.color));
-    ImGui::DragFloat3("Light Position", glm::value_ptr(light.position), 0.001f);
+
+    const char* items[] = {
+            "Choosing start position",
+            "Choosing end position",
+            "Drawing obstacles"
+    };
+    ImGui::Combo("##mode", reinterpret_cast<int*>(&appContext.mode), items, 3);
+
+
+    ImGui::End();
 }

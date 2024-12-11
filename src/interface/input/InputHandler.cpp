@@ -54,9 +54,15 @@ void InputHandler::mouseButtonCallback(GLFWwindow *window, int button, int actio
     if(dynamic_cast<CameraAnchor*>(appContext.camera.get())) {
         if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
             guiFocus = false;
-        else
-        {
+        else {
             guiFocus = true;
+        }
+
+        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+            appContext.window = window;
+            appContext.draggingMouse = true;
+        } else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
+            appContext.draggingMouse = false;
         }
     }
 }

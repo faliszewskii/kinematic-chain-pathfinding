@@ -15,8 +15,6 @@ public:
     Gui(AppContext &appContext);
 
     void render();
-
-    void renderLightUI(PointLight &light);
 };
 
 

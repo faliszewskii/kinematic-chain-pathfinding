@@ -66,6 +66,9 @@ glm::mat4 myProjection(float yFov, float aspectRatio, float zNear, float zFar) {
 }
 
 glm::mat4 CameraAnchor::getProjectionMatrix() const {
+    float ratio = (float) screenWidth / (float) screenHeight;
+    float side = 5.f;
+    return glm::ortho(ratio*-side, ratio*side, -side, side, -10.f, 10.f);
     return myProjection(glm::radians(fov), (float) screenWidth / (float) screenHeight, nearPlane, farPlane);
 }
 

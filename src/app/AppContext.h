@@ -13,6 +13,9 @@
 #include "entity/light/PointLight.h"
 #include "entity/point/Point.h"
 #include "../opengl/model/Model.h"
+#include "entity/grid/Grid.h"
+#include "entity/robotArm/RobotArm.h"
+#include "kinematicChain/KinematicChain.h"
 
 struct AppContext {
     AppContext() = default;
@@ -21,14 +24,22 @@ struct AppContext {
     std::unique_ptr<FrameBufferManager> frameBufferManager;
 
     // Shaders
-    std::unique_ptr<Shader> phongShader;
     std::unique_ptr<Shader> pointShader;
+    std::unique_ptr<Shader> colorShader;
 
-    // TODO --- App data goes here
-    std::unique_ptr<PointLight> light;
-    std::unique_ptr<Point> lightBulb;
-    std::unique_ptr<Quad> quad;
-    std::unique_ptr<Model> bunny;
+    std::unique_ptr<Grid> grid;
+    std::unique_ptr<RobotArm> robotArm;
+    std::unique_ptr<KinematicChain> kinematicChain;
+    glm::vec2 startCoords;
+    glm::vec2 endCoords;
+    bool draggingMouse;
+    GLFWwindow *window;
+    std::unique_ptr<Cylinder> unreachableSpace;
+    enum {
+        ChoosingStart,
+        ChoosingEnd,
+        DrawingObstacles
+    } mode;
 };
 
 #endif //OPENGL_TEMPLATE_APPCONTEXT_H
