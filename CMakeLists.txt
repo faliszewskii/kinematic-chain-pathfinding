@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(opengl_template)
+project(kinematic-chain-pathfinding)
 
 set(CMAKE_CXX_STANDARD 26)
 
@@ -74,7 +74,7 @@ else()
 endif()
 
 # Add executables
-add_executable(OpenGL_Template
+add_executable(kinematic-chain-pathfinding
         # Dependencies
         ${IMGUI_SRC}
         # Application
@@ -86,7 +86,7 @@ add_executable(OpenGL_Template
 
 # Link libraries
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")             # macOS
-    target_link_libraries(OpenGL_Template
+    target_link_libraries(kinematic-chain-pathfinding
             ${CMAKE_SOURCE_DIR}/dep/lib/libglfw.3.4.dylib
             ${CMAKE_SOURCE_DIR}/dep/lib/libGLEW.2.2.0.dylib
             "-framework OpenGL"
@@ -99,13 +99,13 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")        # Windows
     find_package(glm CONFIG REQUIRED)
     find_package(OpenGL REQUIRED)
     include_directories( ${OPENGL_INCLUDE_DIRS})
-    target_link_libraries(OpenGL_Template PRIVATE
+    target_link_libraries(kinematic-chain-pathfinding PRIVATE
             glm::glm
             glfw
             ${OPENGL_LIBRARIES}
     )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")          # Linux
-    target_link_libraries(OpenGL_Template
+    target_link_libraries(kinematic-chain-pathfinding
             -lglfw
             -lGLEW
             -lGL
