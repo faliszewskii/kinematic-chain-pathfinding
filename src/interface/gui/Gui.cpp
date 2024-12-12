@@ -21,6 +21,8 @@ void Gui::render() {
     };
     ImGui::Combo("##mode", reinterpret_cast<int*>(&appContext.mode), items, 3);
 
+    auto size = ImVec2(KinematicChain::resX, KinematicChain::resY);
+    ImGui::Image((void*)(intptr_t)appContext.parameterTexture->id, size,  ImVec2(0, 0),  ImVec2(1, 1));
 
     ImGui::End();
 }

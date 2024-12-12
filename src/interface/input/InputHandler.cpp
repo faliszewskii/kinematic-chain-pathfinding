@@ -51,6 +51,16 @@ void InputHandler::keyCallback(GLFWwindow *window, int key, int scancode, int ac
 }
 
 void InputHandler::mouseButtonCallback(GLFWwindow *window, int button, int action, int mods) {
+    double xpos, ypos;
+    auto &io = ImGui::GetIO();
+    float side = io.DisplaySize.x / io.DisplaySize.y * 5;
+    glfwGetCursorPos(window , &xpos, &ypos);
+    xpos = (xpos) / (io.DisplaySize.x);
+    xpos = xpos * 2 - 1;
+    ypos = ypos / io.DisplaySize.y;
+    ypos = -2 * ypos + 1;
+    glm::vec2 p = glm::vec2(xpos*side, ypos*5);
+
     if(dynamic_cast<CameraAnchor*>(appContext.camera.get())) {
         if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
             guiFocus = false;
@@ -61,8 +71,18 @@ void InputHandler::mouseButtonCallback(GLFWwindow *window, int button, int actio
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
             appContext.window = window;
             appContext.draggingMouse = true;
+            appContext.startDragging = glm::vec2(p.x, p.y);
         } else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
             appContext.draggingMouse = false;
+            if(appContext.mode == AppContext::DrawingObstacles) {
+                float xMin = std::min(appContext.startDragging.x, (float)p.x);
+                float yMin = std::min(appContext.startDragging.y, (float)p.y);
+                auto distX = (float)std::abs(appContext.startDragging.x - p.x);
+                auto distY = (float)std::abs(appContext.startDragging.y - p.y);
+                if(distX < 0.01 || distY < 0.01) return;
+                appContext.kinematicChain->addObstacle({glm::vec2(xMin, yMin), glm::vec2(distX, distY)});
+                appContext.parameterTexture->update2D(appContext.kinematicChain->getParameters().data());
+            }
         }
     }
 }

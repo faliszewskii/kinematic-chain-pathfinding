@@ -16,6 +16,8 @@
 #include "entity/grid/Grid.h"
 #include "entity/robotArm/RobotArm.h"
 #include "kinematicChain/KinematicChain.h"
+#include "obstacle/Obstacle.h"
+#include "../opengl/texture/Texture.h"
 
 struct AppContext {
     AppContext() = default;
@@ -30,16 +32,25 @@ struct AppContext {
     std::unique_ptr<Grid> grid;
     std::unique_ptr<RobotArm> robotArm;
     std::unique_ptr<KinematicChain> kinematicChain;
+
+    std::unique_ptr<Texture> parameterTexture;
+
     glm::vec2 startCoords;
     glm::vec2 endCoords;
+
     bool draggingMouse;
+    glm::vec2 startDragging;
     GLFWwindow *window;
+
     std::unique_ptr<Cylinder> unreachableSpace;
+
     enum {
         ChoosingStart,
         ChoosingEnd,
         DrawingObstacles
     } mode;
+    Quad obstacleQuad;
+    glm::vec2 currentMouse;
 };
 
 #endif //OPENGL_TEMPLATE_APPCONTEXT_H

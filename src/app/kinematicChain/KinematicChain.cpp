@@ -3,10 +3,17 @@
 //
 
 #include <glm/geometric.hpp>
+#include <algorithm>
 #include "KinematicChain.h"
 
 KinematicChain::KinematicChain() {
     l1 = l2 = 1;
+
+    for(int i = 0; i < resX; i++) {
+        for(int j = 0; j < resY; j++) {
+            parametricMap[i*resY + j] = 0;
+        }
+    }
 }
 
 std::tuple<std::vector<float>, std::vector<float>> KinematicChain::findAngles(glm::vec2 position) const {
@@ -37,5 +44,73 @@ std::tuple<std::vector<float>, std::vector<float>> KinematicChain::findAngles(gl
         angles2.push_back(q2);
     }
 
-    return {angles1, angles2};
+    std::vector<float> correct1;
+    std::vector<float> correct2;
+    for(int i = 0; i < angles1.size(); i++) {
+        float a1 = angles1[i];
+        float a2 = angles2[i];
+        if(!checkCollision(a1, a2)) {
+            correct1.push_back(a1);
+            correct2.push_back(a2);
+        }
+    }
+
+    return {correct1, correct2};
+}
+
+bool KinematicChain::checkCollision(float angle1, float angle2) const {
+    for(auto obstacle : obstacles) {
+        auto p0 = glm::vec2(0);
+        glm::vec2 p1 = p0 + l1 * glm::vec2(std::cos(angle1), std::sin(angle1));
+        glm::vec2 p2 = p1 + l2 * glm::vec2(std::cos(angle1+angle2), std::sin(angle1+angle2));
+        if(lineRectIntersection(p0, p1, obstacle.leftBottom, obstacle.size))
+            return true;
+        if(lineRectIntersection(p1, p2, obstacle.leftBottom, obstacle.size))
+            return true;
+    }
+    return false;
+}
+
+
+std::optional<std::vector<glm::vec2>> KinematicChain::lineRectIntersection(glm::vec2 p, glm::vec2 q, glm::vec2 rectMin, glm::vec2 rectSize) const {
+    glm::vec2 rectMax = rectMin + rectSize;
+    glm::vec2 dirs[] = {glm::vec2(1, 0), glm::vec2(0, 1), glm::vec2(-1, 0), glm::vec2(0, -1)};
+    glm::vec2 edges[] = {rectMin, {rectMax.x, rectMin.y}, rectMax, {rectMin.x, rectMax.y}};
+
+    auto intersect = [](glm::vec2 p1, glm::vec2 p2, glm::vec2 e1, glm::vec2 e2) -> std::optional<glm::vec2> {
+        glm::vec2 r = p2 - p1, s = e2 - e1;
+        float det = r.x * s.y - r.y * s.x;
+        if (abs(det) < 1e-10) return {}; // Parallel
+        float t = ((e1.x - p1.x) * s.y - (e1.y - p1.y) * s.x) / det;
+        float u = ((e1.x - p1.x) * r.y - (e1.y - p1.y) * r.x) / det;
+        if (t >= 0 && t <= 1 && u >= 0 && u <= 1) return p1 + t * r;
+        return {};
+    };
+
+    std::vector<glm::vec2> intersections;
+    for (int i = 0; i < 4; ++i) {
+        if (auto pt = intersect(p, q, edges[i], edges[(i + 1) % 4])) intersections.push_back(*pt);
+    }
+    return intersections.empty() ? std::optional<std::vector<glm::vec2>>{} : intersections;
+}
+
+void KinematicChain::addObstacle(Obstacle obstacle) {
+    obstacles.push_back(obstacle);
+
+    for(int i = 0; i < resX; i++) {
+        for(int j = 0; j < resY; j++) {
+            float a1 = i / 360.f * 2 * std::numbers::pi;
+            float a2 = j / 360.f * 2 * std::numbers::pi;
+            parametricMap[i*resY + j] = checkCollision(a1, a2)? 1.f: 0;
+        }
+    }
+}
+
+std::vector<Obstacle> &KinematicChain::getObstacles() {
+    return obstacles;
+}
+
+
+std::array<float, KinematicChain::resX*KinematicChain::resY> &KinematicChain::getParameters() {
+    return parametricMap;
 }

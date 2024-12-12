@@ -62,7 +62,16 @@ set(APP_SRC
         src/app/entity/grid/Grid.cpp
         src/app/entity/grid/Grid.h
         src/app/entity/cylinder/Cylinder.cpp
-        src/app/entity/cylinder/Cylinder.h)
+        src/app/entity/cylinder/Cylinder.h
+        src/app/kinematicChain/KinematicChain.cpp
+        src/app/kinematicChain/KinematicChain.h
+        src/app/entity/robotArm/RobotArm.cpp
+        src/app/entity/robotArm/RobotArm.h
+        src/app/obstacle/Obstacle.cpp
+        src/app/obstacle/Obstacle.h
+        src/opengl/texture/Texture.h
+        src/opengl/texture/Texture.cpp)
+
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(GLAD_GLEW
@@ -73,10 +82,6 @@ else()
     set(GLAD_GLEW
         dep/glew/glad.c
         dep/glew/glew_glfw.h
-            src/app/kinematicChain/KinematicChain.cpp
-            src/app/kinematicChain/KinematicChain.h
-            src/app/entity/robotArm/RobotArm.cpp
-            src/app/entity/robotArm/RobotArm.h
     )
 
 endif()

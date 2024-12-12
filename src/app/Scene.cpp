@@ -22,6 +22,9 @@ Scene::Scene(AppContext &appContext) : appContext(appContext) {
     appContext.kinematicChain->l2 = 2;
     appContext.unreachableSpace = std::make_unique<Cylinder>();
     appContext.mode = AppContext::ChoosingStart;
+
+    appContext.parameterTexture = std::make_unique<Texture>(360, 360, 1, GL_RED, GL_RED,
+                                          GL_FLOAT, GL_TEXTURE_2D, appContext.kinematicChain->getParameters().data());
 }
 
 void Scene::update() {
@@ -29,18 +32,14 @@ void Scene::update() {
     if(appContext.draggingMouse) {
         double xpos, ypos;
         auto &io = ImGui::GetIO();
-        float side = 8.888888889;
+        float side = io.DisplaySize.x / io.DisplaySize.y * 5;
         glfwGetCursorPos(appContext.window , &xpos, &ypos);
         xpos = (xpos) / (io.DisplaySize.x);
         xpos = xpos * 2 - 1;
         ypos = ypos / io.DisplaySize.y;
         ypos = -2 * ypos + 1;
-        glm::mat4 view = appContext.camera->getViewMatrix();
-        glm::mat4 projection = appContext.camera->getProjectionMatrix();
-        glm::mat4 m = projection * view;
-        glm::vec4 world = glm::inverse(m) * glm::vec4(xpos*side, 0, ypos*5, 1.f);
-        world /= world.w;
         glm::vec2 p = glm::vec2(xpos*side, ypos*5);
+        appContext.currentMouse = p;
 
         switch(appContext.mode) {
 
@@ -53,6 +52,7 @@ void Scene::update() {
                     appContext.endCoords = p;
                 break;
             case AppContext::DrawingObstacles:
+
                 break;
         }
 
@@ -116,7 +116,34 @@ void Scene::render() {
                                     appContext.kinematicChain->l2, q1b[1], q2b[1]);
     }
 
+
+    for(auto &obstacle : appContext.kinematicChain->getObstacles()) {
+        appContext.colorShader->setUniform("color", glm::vec4(0.2,0.2,0.2,1.f));
+        m = glm::identity<glm::mat4>();
+        glm::vec2 d = obstacle.size;
+        m = glm::translate(m, glm::vec3(obstacle.leftBottom.x, 0 ,-obstacle.leftBottom.y));
+        m = glm::scale(m, glm::vec3(d.x, 1, d.y));
+        m = glm::rotate(m, float(std::numbers::pi/2), glm::vec3(0,1,0));
+        m = glm::translate(m, glm::vec3(0.5f, 0, 0.5f));
+        m = glm::rotate(m, float(-std::numbers::pi/2), glm::vec3(1,0,0));
+        appContext.colorShader->setUniform("model", m);
+        appContext.obstacleQuad.render();
+    }
+
     glDisable(GL_CULL_FACE);
+    if(appContext.mode == AppContext::DrawingObstacles && appContext.draggingMouse) {
+        appContext.colorShader->setUniform("color", glm::vec4(0.2,0.2,0.2,1.f));
+        m = glm::identity<glm::mat4>();
+        glm::vec2 d = appContext.startDragging - appContext.currentMouse;
+        m = glm::translate(m, glm::vec3(appContext.startDragging.x,0,-appContext.startDragging.y));
+        m = glm::scale(m, glm::vec3(-d.x, 1, -d.y));
+        m = glm::rotate(m, float(std::numbers::pi/2), glm::vec3(0,1,0));
+        m = glm::translate(m, glm::vec3(0.5f, 0, 0.5f));
+        m = glm::rotate(m, float(-std::numbers::pi/2), glm::vec3(1,0,0));
+        appContext.colorShader->setUniform("model", m);
+        appContext.obstacleQuad.render();
+    }
+
     appContext.grid->render(appContext);
     glEnable(GL_CULL_FACE);
 
