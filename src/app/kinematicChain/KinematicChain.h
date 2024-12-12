@@ -15,12 +15,12 @@ class KinematicChain {
 public:
     static const int resX = 360;
     static const int resY = 360;
+    std::array<std::array<float, resX>, resY> parametricMap; // Change to obstacle map
+    std::array<std::array<int, resX>, resY> gradient;
+    int maxGradient;
 private:
     std::vector<Obstacle> obstacles;
-    std::array<float, resX*resY> parametricMap; // Change to obstacle map
     /* TODO
-     * Add start and end positions
-     * Add path calculation on trigger.
      * Add path point list
      * Add path gradient map
      * In visualisation show union of both maps.
@@ -31,7 +31,10 @@ private:
 
 public:
     KinematicChain();
+
     float l1, l2;
+    std::optional<glm::vec2> startCoords;
+    std::optional<glm::vec2> endCoords;
 
     void addObstacle(Obstacle obstacle);
     std::vector<Obstacle>& getObstacles();
@@ -40,7 +43,8 @@ public:
     [[nodiscard]] bool checkCollision(float angle1, float angle2) const;
     [[nodiscard]] std::optional<std::vector<glm::vec2>> lineRectIntersection(glm::vec2 p, glm::vec2 q, glm::vec2 rectMin, glm::vec2 rectSize) const;
 
-    std::array<float, resX * resY> &getParameters();
+    std::array<std::array<float, resX>, resY> &getParameters();
+    void calculatePath();
 };
 
 

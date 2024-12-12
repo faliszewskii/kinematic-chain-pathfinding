@@ -23,8 +23,9 @@ Scene::Scene(AppContext &appContext) : appContext(appContext) {
     appContext.unreachableSpace = std::make_unique<Cylinder>();
     appContext.mode = AppContext::ChoosingStart;
 
-    appContext.parameterTexture = std::make_unique<Texture>(360, 360, 1, GL_RED, GL_RED,
-                                          GL_FLOAT, GL_TEXTURE_2D, appContext.kinematicChain->getParameters().data());
+    appContext.parameterTexture = std::make_unique<Texture>(360, 360, 4, GL_SRGB_ALPHA,
+                                                            GL_RGBA, GL_FLOAT, GL_TEXTURE_2D,
+                                                            nullptr);
 }
 
 void Scene::update() {
@@ -45,11 +46,11 @@ void Scene::update() {
 
             case AppContext::ChoosingStart:
                 if (!get<0>(appContext.kinematicChain->findAngles(p)).empty())
-                    appContext.startCoords = p;
+                    appContext.kinematicChain->startCoords = p;
                 break;
             case AppContext::ChoosingEnd:
                 if (!get<0>(appContext.kinematicChain->findAngles(p)).empty())
-                    appContext.endCoords = p;
+                    appContext.kinematicChain->endCoords = p;
                 break;
             case AppContext::DrawingObstacles:
 
@@ -91,29 +92,33 @@ void Scene::render() {
         appContext.unreachableSpace->render();
     }
 
-    auto [q1, q2] = appContext.kinematicChain->findAngles(appContext.startCoords);
-    if(!q1.empty()) {
-        appContext.colorShader->setUniform("color", glm::vec4(0.5,0.2,0.3,1));
-        appContext.robotArm->render(*appContext.colorShader, appContext.kinematicChain->l1,
-                                    appContext.kinematicChain->l2, q1[0], q2[0]);
-    }
-    if(q1.size() > 1) {
-        appContext.colorShader->setUniform("color", glm::vec4(0.5,0.2,0.3,0.2));
-        appContext.robotArm->render(*appContext.colorShader, appContext.kinematicChain->l1,
-                                    appContext.kinematicChain->l2, q1[1], q2[1]);
+    if(appContext.kinematicChain->startCoords.has_value()) {
+        auto [q1, q2] = appContext.kinematicChain->findAngles(appContext.kinematicChain->startCoords.value());
+        if (!q1.empty()) {
+            appContext.colorShader->setUniform("color", glm::vec4(0.5, 0.2, 0.3, 1));
+            appContext.robotArm->render(*appContext.colorShader, appContext.kinematicChain->l1,
+                                        appContext.kinematicChain->l2, q1[0], q2[0]);
+        }
+        if (q1.size() > 1) {
+            appContext.colorShader->setUniform("color", glm::vec4(0.5, 0.2, 0.3, 0.2));
+            appContext.robotArm->render(*appContext.colorShader, appContext.kinematicChain->l1,
+                                        appContext.kinematicChain->l2, q1[1], q2[1]);
+        }
     }
 
 
-    auto [q1b, q2b] = appContext.kinematicChain->findAngles(appContext.endCoords);
-    if(!q1b.empty()) {
-        appContext.colorShader->setUniform("color", glm::vec4(0.2,0.5,0.3,1));
-        appContext.robotArm->render(*appContext.colorShader, appContext.kinematicChain->l1,
-                                    appContext.kinematicChain->l2, q1b[0], q2b[0]);
-    }
-    if(q1b.size() > 1) {
-        appContext.colorShader->setUniform("color", glm::vec4(0.2,0.5,0.3,0.2));
-        appContext.robotArm->render(*appContext.colorShader, appContext.kinematicChain->l1,
-                                    appContext.kinematicChain->l2, q1b[1], q2b[1]);
+    if(appContext.kinematicChain->endCoords.has_value()){
+        auto [q1b, q2b] = appContext.kinematicChain->findAngles(appContext.kinematicChain->endCoords.value());
+        if (!q1b.empty()) {
+            appContext.colorShader->setUniform("color", glm::vec4(0.2, 0.5, 0.3, 1));
+            appContext.robotArm->render(*appContext.colorShader, appContext.kinematicChain->l1,
+                                        appContext.kinematicChain->l2, q1b[0], q2b[0]);
+        }
+        if (q1b.size() > 1) {
+            appContext.colorShader->setUniform("color", glm::vec4(0.2, 0.5, 0.3, 0.2));
+            appContext.robotArm->render(*appContext.colorShader, appContext.kinematicChain->l1,
+                                        appContext.kinematicChain->l2, q1b[1], q2b[1]);
+        }
     }
 
 

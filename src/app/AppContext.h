@@ -35,8 +35,6 @@ struct AppContext {
 
     std::unique_ptr<Texture> parameterTexture;
 
-    glm::vec2 startCoords;
-    glm::vec2 endCoords;
 
     bool draggingMouse;
     glm::vec2 startDragging;

@@ -4,6 +4,8 @@
 
 #include <glm/geometric.hpp>
 #include <algorithm>
+#include <stack>
+#include <queue>
 #include "KinematicChain.h"
 
 KinematicChain::KinematicChain() {
@@ -11,7 +13,7 @@ KinematicChain::KinematicChain() {
 
     for(int i = 0; i < resX; i++) {
         for(int j = 0; j < resY; j++) {
-            parametricMap[i*resY + j] = 0;
+            parametricMap[i][j] = 0;
         }
     }
 }
@@ -101,7 +103,7 @@ void KinematicChain::addObstacle(Obstacle obstacle) {
         for(int j = 0; j < resY; j++) {
             float a1 = i / 360.f * 2 * std::numbers::pi;
             float a2 = j / 360.f * 2 * std::numbers::pi;
-            parametricMap[i*resY + j] = checkCollision(a1, a2)? 1.f: 0;
+            parametricMap[i][j] = checkCollision(a1, a2)? 1.f: 0;
         }
     }
 }
@@ -111,6 +113,48 @@ std::vector<Obstacle> &KinematicChain::getObstacles() {
 }
 
 
-std::array<float, KinematicChain::resX*KinematicChain::resY> &KinematicChain::getParameters() {
+std::array<std::array<float, KinematicChain::resX>, KinematicChain::resY> &KinematicChain::getParameters() {
     return parametricMap;
+}
+
+void KinematicChain::calculatePath() {
+    if(!startCoords || !endCoords) return;
+    maxGradient = 1;
+    gradient = std::array<std::array<int, resX>, resY>{};
+
+    std::array<std::tuple<int, int>, 4> dirs = {
+            {{0, 1},
+            {1, 0},
+            {0, -1},
+            {-1, 0}},
+    };
+
+    auto [angles1, angles2] = findAngles(startCoords.value());
+    int a1 = angles1[0] / 2 / std::numbers::pi * 360 + 180;
+    int a2 = angles2[0] / 2 / std::numbers::pi * 360 + 180;
+
+    if(parametricMap[a1][a2] != 0) return;
+    gradient[a1][a2] = 1;
+
+    std::queue<std::tuple<int, int>> queue;
+    queue.emplace(a1, a2);
+
+    while(!queue.empty()) {
+        auto [x, y] = queue.front();
+        queue.pop();
+        for(auto &dir : dirs) {
+            auto [dx, dy] = dir;
+            auto nextX = (x + dx + resX)%resX;
+            auto nextY = (y + dy + resY)%resY;
+            if(gradient[nextX][nextY] != 0)
+                continue;
+            if(parametricMap[nextX][nextY] < 0.5f) {
+                gradient[nextX][nextY] = gradient[x][y] + 1;
+                if(maxGradient < gradient[nextX][nextY]) maxGradient = gradient[nextX][nextY];
+                queue.emplace(nextX, nextY);
+            } else {
+                maxGradient = maxGradient;
+            }
+        }
+    }
 }

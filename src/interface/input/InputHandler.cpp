@@ -81,7 +81,28 @@ void InputHandler::mouseButtonCallback(GLFWwindow *window, int button, int actio
                 auto distY = (float)std::abs(appContext.startDragging.y - p.y);
                 if(distX < 0.01 || distY < 0.01) return;
                 appContext.kinematicChain->addObstacle({glm::vec2(xMin, yMin), glm::vec2(distX, distY)});
-                appContext.parameterTexture->update2D(appContext.kinematicChain->getParameters().data());
+
+                std::array<std::array<glm::vec4, KinematicChain::resX>, KinematicChain::resY> tex{};
+                for(int x = 0; x < KinematicChain::resX; x++) {
+                    for(int y = 0; y < KinematicChain::resY; y++) {
+                        if(appContext.kinematicChain->getParameters()[x][y] == 1)
+                            tex[x][y] = glm::vec4(1, 0, 0, 1);
+                        else
+                            tex[x][y] = glm::vec4(0, 0, 0, 1);
+                    }
+                }
+                std::vector<float> flattenedArray;
+                flattenedArray.reserve(KinematicChain::resX * KinematicChain::resY * 4);
+                for (const auto& row : tex) {
+                    for (const auto& vec : row) {
+                        flattenedArray.push_back(vec.x);
+                        flattenedArray.push_back(vec.y);
+                        flattenedArray.push_back(vec.z);
+                        flattenedArray.push_back(1);
+                    }
+                }
+
+                appContext.parameterTexture->update2D(flattenedArray.data());
             }
         }
     }
