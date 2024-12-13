@@ -15,8 +15,9 @@ class KinematicChain {
 public:
     static const int resX = 360;
     static const int resY = 360;
-    std::array<std::array<float, resX>, resY> parametricMap; // Change to obstacle map
+    std::array<std::array<float, resX>, resY> obstacleMap; // Change to obstacle map
     std::array<std::array<int, resX>, resY> gradient;
+    std::vector<std::tuple<float, float>> foundPath;
     int maxGradient;
 private:
     std::vector<Obstacle> obstacles;
@@ -45,6 +46,15 @@ public:
 
     std::array<std::array<float, resX>, resY> &getParameters();
     void calculatePath();
+
+    glm::vec2 getTip(float angle1, float angle2);
+
+    [[nodiscard]] bool doSegmentsIntersect(const glm::vec2 &a1, const glm::vec2 &a2, const glm::vec2 &b1, const glm::vec2 &b2) const;
+    [[nodiscard]] bool doSegmentIntersectRectangle(glm::vec2 p, glm::vec2 q, glm::vec2 rectMin, glm::vec2 rectSize) const;
+
+    bool testConfiguration(int a1, int a2, int target1, int target2);
+
+    int getIndexFromAngle(float a) const;
 };
 
 

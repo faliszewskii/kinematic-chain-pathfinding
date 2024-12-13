@@ -82,6 +82,7 @@ else()
     set(GLAD_GLEW
         dep/glew/glad.c
         dep/glew/glew_glfw.h
+            src/app/entity/line/Line.h
     )
 
 endif()

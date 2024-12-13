@@ -45,6 +45,14 @@ void Gui::render() {
                 }
             }
             appContext.parameterTexture->update2D(flattenedArray.data());
+            std::vector<glm::vec3> vertices;
+            auto path = appContext.kinematicChain->foundPath;
+            std::transform(path.begin(), path.end(), std::back_inserter(vertices), [&](auto p){
+                const auto& [a1, a2] = p;
+                glm::vec2 tip = appContext.kinematicChain->getTip(a1, a2);
+                return glm::vec3(tip.x, 1, -tip.y);
+            });
+            appContext.pathLine->updatePoints(vertices);
         }
     }
 

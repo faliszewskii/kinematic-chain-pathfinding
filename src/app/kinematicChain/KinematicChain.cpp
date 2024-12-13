@@ -13,7 +13,7 @@ KinematicChain::KinematicChain() {
 
     for(int i = 0; i < resX; i++) {
         for(int j = 0; j < resY; j++) {
-            parametricMap[i][j] = 0;
+            obstacleMap[i][j] = 0;
         }
     }
 }
@@ -52,6 +52,10 @@ std::tuple<std::vector<float>, std::vector<float>> KinematicChain::findAngles(gl
         float a1 = angles1[i];
         float a2 = angles2[i];
         if(!checkCollision(a1, a2)) {
+            while(a1 < -std::numbers::pi) a1 += 2 * std::numbers::pi;
+            while(a2 < -std::numbers::pi) a2 += 2 * std::numbers::pi;
+            while(a1 >= std::numbers::pi) a1 -= 2 * std::numbers::pi;
+            while(a2 >= std::numbers::pi) a2 -= 2 * std::numbers::pi;
             correct1.push_back(a1);
             correct2.push_back(a2);
         }
@@ -65,45 +69,54 @@ bool KinematicChain::checkCollision(float angle1, float angle2) const {
         auto p0 = glm::vec2(0);
         glm::vec2 p1 = p0 + l1 * glm::vec2(std::cos(angle1), std::sin(angle1));
         glm::vec2 p2 = p1 + l2 * glm::vec2(std::cos(angle1+angle2), std::sin(angle1+angle2));
-        if(lineRectIntersection(p0, p1, obstacle.leftBottom, obstacle.size))
+        if(doSegmentIntersectRectangle(p0, p1, obstacle.leftBottom, obstacle.size))
             return true;
-        if(lineRectIntersection(p1, p2, obstacle.leftBottom, obstacle.size))
+        if(doSegmentIntersectRectangle(p1, p2, obstacle.leftBottom, obstacle.size))
             return true;
     }
     return false;
 }
 
-
-std::optional<std::vector<glm::vec2>> KinematicChain::lineRectIntersection(glm::vec2 p, glm::vec2 q, glm::vec2 rectMin, glm::vec2 rectSize) const {
+bool KinematicChain::doSegmentIntersectRectangle(glm::vec2 p, glm::vec2 q, glm::vec2 rectMin, glm::vec2 rectSize) const {
     glm::vec2 rectMax = rectMin + rectSize;
-    glm::vec2 dirs[] = {glm::vec2(1, 0), glm::vec2(0, 1), glm::vec2(-1, 0), glm::vec2(0, -1)};
     glm::vec2 edges[] = {rectMin, {rectMax.x, rectMin.y}, rectMax, {rectMin.x, rectMax.y}};
 
-    auto intersect = [](glm::vec2 p1, glm::vec2 p2, glm::vec2 e1, glm::vec2 e2) -> std::optional<glm::vec2> {
-        glm::vec2 r = p2 - p1, s = e2 - e1;
-        float det = r.x * s.y - r.y * s.x;
-        if (abs(det) < 1e-10) return {}; // Parallel
-        float t = ((e1.x - p1.x) * s.y - (e1.y - p1.y) * s.x) / det;
-        float u = ((e1.x - p1.x) * r.y - (e1.y - p1.y) * r.x) / det;
-        if (t >= 0 && t <= 1 && u >= 0 && u <= 1) return p1 + t * r;
-        return {};
-    };
+    if(p.x > rectMin.x && p.x < rectMax.x && p.y > rectMin.y && p.y < rectMax.y)
+        return true;
+    if(q.x > rectMin.x && q.x < rectMax.x && q.y > rectMin.y && q.y < rectMax.y)
+        return true;
 
-    std::vector<glm::vec2> intersections;
-    for (int i = 0; i < 4; ++i) {
-        if (auto pt = intersect(p, q, edges[i], edges[(i + 1) % 4])) intersections.push_back(*pt);
+    for(int i = 0; i < 4; i++) {
+        if(doSegmentsIntersect(p, q, edges[i], edges[(i+1)%4]))
+            return true;
     }
-    return intersections.empty() ? std::optional<std::vector<glm::vec2>>{} : intersections;
+    return false;
 }
+
+bool KinematicChain::doSegmentsIntersect(const glm::vec2& a1, const glm::vec2& a2, const glm::vec2& b1, const glm::vec2& b2) const {
+
+    glm::vec2 p = a1;
+    glm::vec2 q = b1;
+    glm::vec2 r = a2 - a1;
+    glm::vec2 s = b2 - b1;
+
+    auto cp = [](glm::vec2 v, glm::vec2 w) { return v.x * w.y - v.y * w.x; };
+
+    float t = cp(q - p, s) / cp(r, s);
+    float u = cp(q - p, r) / cp(r, s);
+
+    return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+}
+
 
 void KinematicChain::addObstacle(Obstacle obstacle) {
     obstacles.push_back(obstacle);
 
     for(int i = 0; i < resX; i++) {
         for(int j = 0; j < resY; j++) {
-            float a1 = i / 360.f * 2 * std::numbers::pi;
-            float a2 = j / 360.f * 2 * std::numbers::pi;
-            parametricMap[i][j] = checkCollision(a1, a2)? 1.f: 0;
+            float a1 = (i - 180) / 360.f * 2 * std::numbers::pi;
+            float a2 = (j - 180) / 360.f * 2 * std::numbers::pi;
+            obstacleMap[i][j] = checkCollision(a1, a2) ? 1.f : 0;
         }
     }
 }
@@ -114,26 +127,51 @@ std::vector<Obstacle> &KinematicChain::getObstacles() {
 
 
 std::array<std::array<float, KinematicChain::resX>, KinematicChain::resY> &KinematicChain::getParameters() {
-    return parametricMap;
+    return obstacleMap;
 }
 
 void KinematicChain::calculatePath() {
     if(!startCoords || !endCoords) return;
-    maxGradient = 1;
-    gradient = std::array<std::array<int, resX>, resY>{};
+
+    // Handle all cases
+    auto [angles1, angles2] = findAngles(startCoords.value());
+    if(angles1.empty() || angles2.empty()) return;
+
+    auto [vecTarget1, vecTarget2] = findAngles(endCoords.value());
+    if(vecTarget1.empty() || vecTarget2.empty()) return;
+
+    if(testConfiguration(
+            getIndexFromAngle(angles1[0]), getIndexFromAngle(angles2[0]),
+            getIndexFromAngle(vecTarget1[0]), getIndexFromAngle(vecTarget2[0])))
+        return;
+
+    if(vecTarget2.size()>1 && testConfiguration(
+            getIndexFromAngle(angles1[0]), getIndexFromAngle(angles2[0]),
+            getIndexFromAngle(vecTarget1[1]), getIndexFromAngle(vecTarget2[1])))
+        return;
+
+    if(angles1.size()>1 && testConfiguration(
+            getIndexFromAngle(angles1[1]), getIndexFromAngle(angles2[1]),
+            getIndexFromAngle(vecTarget1[0]), getIndexFromAngle(vecTarget2[0])))
+        return;
+
+    if(angles1.size()>1 && vecTarget2.size()>1 && testConfiguration(
+            getIndexFromAngle(angles1[1]), getIndexFromAngle(angles2[1]),
+            getIndexFromAngle(vecTarget1[1]), getIndexFromAngle(vecTarget2[1])))
+        return;
+}
+
+bool KinematicChain::testConfiguration(int a1, int a2, int target1, int target2) {
+    if(obstacleMap[a1][a2] != 0 || obstacleMap[target1][target2] != 0) return false;
 
     std::array<std::tuple<int, int>, 4> dirs = {
             {{0, 1},
-            {1, 0},
-            {0, -1},
-            {-1, 0}},
+             {1, 0},
+             {0, -1},
+             {-1, 0}},
     };
-
-    auto [angles1, angles2] = findAngles(startCoords.value());
-    int a1 = angles1[0] / 2 / std::numbers::pi * 360 + 180;
-    int a2 = angles2[0] / 2 / std::numbers::pi * 360 + 180;
-
-    if(parametricMap[a1][a2] != 0) return;
+    maxGradient = 1;
+    gradient = std::array<std::array<int, resX>, resY>{};
     gradient[a1][a2] = 1;
 
     std::queue<std::tuple<int, int>> queue;
@@ -146,15 +184,49 @@ void KinematicChain::calculatePath() {
             auto [dx, dy] = dir;
             auto nextX = (x + dx + resX)%resX;
             auto nextY = (y + dy + resY)%resY;
-            if(gradient[nextX][nextY] != 0)
+            if(gradient[nextX][nextY] != 0 || obstacleMap[nextX][nextY] == 1.f) {
                 continue;
-            if(parametricMap[nextX][nextY] < 0.5f) {
-                gradient[nextX][nextY] = gradient[x][y] + 1;
-                if(maxGradient < gradient[nextX][nextY]) maxGradient = gradient[nextX][nextY];
-                queue.emplace(nextX, nextY);
-            } else {
-                maxGradient = maxGradient;
+            }
+            gradient[nextX][nextY] = gradient[x][y] + 1;
+            if(maxGradient < gradient[nextX][nextY]) maxGradient = gradient[nextX][nextY];
+            queue.emplace(nextX, nextY);
+        }
+    }
+
+    if(gradient[target1][target2] == 0) {
+        // Couldn't find a path
+        return false;
+    }
+
+    foundPath.clear();
+    int currentGradient = gradient[target1][target2];
+    int x = target1;
+    int y = target2;
+    foundPath.emplace_back((x - 180) / 360.f * 2 * std::numbers::pi, (y - 180) / 360.f * 2 * std::numbers::pi);
+    while(currentGradient != 1) {
+        for(auto &dir : dirs) {
+            auto [dx, dy] = dir;
+            auto nextX = (x + dx + resX)%resX;
+            auto nextY = (y + dy + resY)%resY;
+            if(gradient[nextX][nextY] < currentGradient && obstacleMap[nextX][nextY] != 1.f) {
+                currentGradient = gradient[nextX][nextY];
+                x = nextX;
+                y = nextY;
+                foundPath.emplace_back((x - 180) / 360.f * 2 * std::numbers::pi, (y - 180) / 360.f * 2 * std::numbers::pi);
+                break;
             }
         }
     }
+    return true;
+}
+
+glm::vec2 KinematicChain::getTip(float angle1, float angle2) {
+    auto p0 = glm::vec2(0);
+    glm::vec2 p1 = p0 + l1 * glm::vec2(std::cos(angle1), std::sin(angle1));
+    glm::vec2 p2 = p1 + l2 * glm::vec2(std::cos(angle1+angle2), std::sin(angle1+angle2));
+    return p2;
+}
+
+int KinematicChain::getIndexFromAngle(float a) const {
+    return a / 2 / (float)std::numbers::pi * 360 + 180;
 }

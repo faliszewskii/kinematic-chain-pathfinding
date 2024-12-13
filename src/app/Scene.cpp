@@ -22,10 +22,10 @@ Scene::Scene(AppContext &appContext) : appContext(appContext) {
     appContext.kinematicChain->l2 = 2;
     appContext.unreachableSpace = std::make_unique<Cylinder>();
     appContext.mode = AppContext::ChoosingStart;
-
     appContext.parameterTexture = std::make_unique<Texture>(360, 360, 4, GL_SRGB_ALPHA,
                                                             GL_RGBA, GL_FLOAT, GL_TEXTURE_2D,
                                                             nullptr);
+    appContext.pathLine = std::make_unique<Line>();
 }
 
 void Scene::update() {
@@ -46,21 +46,23 @@ void Scene::update() {
 
             case AppContext::ChoosingStart:
                 if (!get<0>(appContext.kinematicChain->findAngles(p)).empty())
+                {
                     appContext.kinematicChain->startCoords = p;
+                    // TODO Add real time path calculation
+                }
+
                 break;
             case AppContext::ChoosingEnd:
-                if (!get<0>(appContext.kinematicChain->findAngles(p)).empty())
+                if (!get<0>(appContext.kinematicChain->findAngles(p)).empty()) {
                     appContext.kinematicChain->endCoords = p;
+                    // TODO Add real time path calculation
+                }
                 break;
             case AppContext::DrawingObstacles:
 
                 break;
         }
-
-//        std:cout<< appContext.startCoords.x<< ", " <<appContext.startCoords.y << std::endl;
-
     }
-
 }
 
 void Scene::render() {
@@ -121,6 +123,9 @@ void Scene::render() {
         }
     }
 
+    appContext.colorShader->setUniform("model", glm::identity<glm::mat4>());
+    appContext.colorShader->setUniform("color", glm::vec4{1, 1, 1, 1});
+    appContext.pathLine->render();
 
     for(auto &obstacle : appContext.kinematicChain->getObstacles()) {
         appContext.colorShader->setUniform("color", glm::vec4(0.2,0.2,0.2,1.f));

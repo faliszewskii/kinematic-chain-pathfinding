@@ -18,6 +18,7 @@
 #include "kinematicChain/KinematicChain.h"
 #include "obstacle/Obstacle.h"
 #include "../opengl/texture/Texture.h"
+#include "entity/line/Line.h"
 
 struct AppContext {
     AppContext() = default;
@@ -32,6 +33,7 @@ struct AppContext {
     std::unique_ptr<Grid> grid;
     std::unique_ptr<RobotArm> robotArm;
     std::unique_ptr<KinematicChain> kinematicChain;
+    std::unique_ptr<Line> pathLine;
 
     std::unique_ptr<Texture> parameterTexture;
 
