@@ -9,6 +9,7 @@
 #include <vector>
 #include <glm/vec2.hpp>
 #include <array>
+#include <optional>
 #include "../obstacle/Obstacle.h"
 
 class KinematicChain {
@@ -17,18 +18,14 @@ public:
     static const int resY = 360;
     std::array<std::array<float, resX>, resY> obstacleMap; // Change to obstacle map
     std::array<std::array<int, resX>, resY> gradient;
+    std::array<std::array<int, resX>, resY> targetGradient;
     std::vector<std::tuple<float, float>> foundPath;
     int maxGradient;
+    int maxTargetGradient;
+    int startOption;
+    int endOption;
 private:
     std::vector<Obstacle> obstacles;
-    /* TODO
-     * Add path point list
-     * Add path gradient map
-     * In visualisation show union of both maps.
-     * Fix collisions
-     * Add animation.
-     * Done
-     * */
 
 public:
     KinematicChain();
@@ -36,6 +33,8 @@ public:
     float l1, l2;
     std::optional<glm::vec2> startCoords;
     std::optional<glm::vec2> endCoords;
+
+    void updateObstacles();
 
     void addObstacle(Obstacle obstacle);
     std::vector<Obstacle>& getObstacles();

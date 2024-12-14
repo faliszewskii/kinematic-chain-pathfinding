@@ -58,7 +58,6 @@ set(APP_SRC
         src/app/Scene.h
         src/app/entity/light/PointLight.h
         src/app/entity/point/Point.h
-        src/opengl/model/Model.h
         src/app/entity/grid/Grid.cpp
         src/app/entity/grid/Grid.h
         src/app/entity/cylinder/Cylinder.cpp
@@ -70,7 +69,10 @@ set(APP_SRC
         src/app/obstacle/Obstacle.cpp
         src/app/obstacle/Obstacle.h
         src/opengl/texture/Texture.h
-        src/opengl/texture/Texture.cpp)
+        src/opengl/texture/Texture.cpp
+        src/app/entity/line/Line.h
+        src/app/parametricMap/ParametricMap.h
+        src/app/parametricMap/ParametricMap.cpp)
 
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -82,7 +84,6 @@ else()
     set(GLAD_GLEW
         dep/glew/glad.c
         dep/glew/glew_glfw.h
-            src/app/entity/line/Line.h
     )
 
 endif()

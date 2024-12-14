@@ -10,15 +10,11 @@
 #include "../interface/camera/BaseCamera.h"
 #include "entity/quad/Quad.h"
 #include "../opengl/shader/Shader.h"
-#include "entity/light/PointLight.h"
-#include "entity/point/Point.h"
-#include "../opengl/model/Model.h"
 #include "entity/grid/Grid.h"
 #include "entity/robotArm/RobotArm.h"
 #include "kinematicChain/KinematicChain.h"
-#include "obstacle/Obstacle.h"
-#include "../opengl/texture/Texture.h"
 #include "entity/line/Line.h"
+#include "parametricMap/ParametricMap.h"
 
 struct AppContext {
     AppContext() = default;
@@ -35,7 +31,7 @@ struct AppContext {
     std::unique_ptr<KinematicChain> kinematicChain;
     std::unique_ptr<Line> pathLine;
 
-    std::unique_ptr<Texture> parameterTexture;
+    std::unique_ptr<ParametricMap> parametricMap;
 
 
     bool draggingMouse;

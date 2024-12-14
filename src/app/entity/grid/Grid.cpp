@@ -36,7 +36,7 @@ void Grid::render(AppContext &appContext) const {
     mesh->render();
 }
 
-void Grid::addQuad(vector<unsigned int> &indices, int i0, int i1, int i2, int i3) {
+void Grid::addQuad(std::vector<unsigned int> &indices, int i0, int i1, int i2, int i3) {
     indices.push_back(i0);
     indices.push_back(i1);
     indices.push_back(i2);

@@ -9,10 +9,11 @@
 Gui::Gui(AppContext &appContext) : appContext(appContext) {}
 
 void Gui::render() {
+    bool modified = false;
     ImGui::Begin("Kinematic chain pathfinding");
-    ImGui::DragFloat("l1", &appContext.kinematicChain->l1, 0.01, 0.01, 3);
-    ImGui::DragFloat("l2", &appContext.kinematicChain->l2, 0.01, 0.01, 3);
-
+    modified |= ImGui::DragFloat("l1", &appContext.kinematicChain->l1, 0.01, 0.01, 3);
+    modified |= ImGui::DragFloat("l2", &appContext.kinematicChain->l2, 0.01, 0.01, 3);
+    if(modified) appContext.kinematicChain->updateObstacles();
 
     const char* items[] = {
             "Choosing start position",
@@ -27,24 +28,33 @@ void Gui::render() {
             std::array<std::array<glm::vec4, KinematicChain::resX>, KinematicChain::resY> tex{};
             for (int x = 0; x < KinematicChain::resX; x++) {
                 for (int y = 0; y < KinematicChain::resY; y++) {
-                    if (appContext.kinematicChain->getParameters()[x][y] == 1)
+                    if(appContext.kinematicChain->gradient[x][y] == 1)
+                        tex[x][y] = glm::vec4(1, 0, 1, 1);
+                    else if(appContext.kinematicChain->targetGradient[x][y] == 1)
+                        tex[x][y] = glm::vec4(1, 1, 0, 1);
+                    else if (appContext.kinematicChain->getParameters()[x][y] == 1)
                         tex[x][y] = glm::vec4(1, 0, 0, 1);
-                    else
-                        tex[x][y] = glm::vec4(0, ((float)appContext.kinematicChain->gradient[x][y] /
-                                                 appContext.kinematicChain->maxGradient), 0, 1);
+                    else if(appContext.kinematicChain->gradient[x][y] == 0 && (float)appContext.kinematicChain->targetGradient[x][y] == 0)
+                        tex[x][y] = glm::vec4(0, 0, 0, 1);
+                        else
+                        tex[x][y] = glm::vec4(
+                            0,
+                            1-((float)appContext.kinematicChain->gradient[x][y] /
+                                                appContext.kinematicChain->maxGradient),
+                            1-((float)appContext.kinematicChain->targetGradient[x][y] /
+                                                appContext.kinematicChain->maxTargetGradient),
+                                                 1);
                 }
             }
-            std::vector<float> flattenedArray;
-            flattenedArray.reserve(KinematicChain::resX * KinematicChain::resY * 4);
-            for (const auto &row: tex) {
-                for (const auto &vec: row) {
-                    flattenedArray.push_back(vec.x);
-                    flattenedArray.push_back(vec.y);
-                    flattenedArray.push_back(vec.z);
-                    flattenedArray.push_back(1);
+            if(appContext.kinematicChain->foundPath.size() > 2) {
+                for(auto p = appContext.kinematicChain->foundPath.begin()+1; p != appContext.kinematicChain->foundPath.end()-1; ++p) {
+                    auto [a1, a2] = *p;
+                    int x = a1 / 2 / (float)std::numbers::pi * 360 + 180;
+                    int y = a2 / 2 / (float)std::numbers::pi * 360 + 180;
+                    tex[x][y] = glm::vec4(1);
                 }
             }
-            appContext.parameterTexture->update2D(flattenedArray.data());
+            appContext.parametricMap->updateTexture(tex);
             std::vector<glm::vec3> vertices;
             auto path = appContext.kinematicChain->foundPath;
             std::transform(path.begin(), path.end(), std::back_inserter(vertices), [&](auto p){
@@ -57,7 +67,7 @@ void Gui::render() {
     }
 
     auto size = ImVec2(KinematicChain::resX, KinematicChain::resY);
-    ImGui::Image((void*)(intptr_t)appContext.parameterTexture->id, size,  ImVec2(0, 0),  ImVec2(1, 1));
+    ImGui::Image((void*)(intptr_t)appContext.parametricMap->getId(), size,  ImVec2(0, 0),  ImVec2(1, 1));
 
     ImGui::End();
 }

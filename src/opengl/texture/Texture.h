@@ -5,9 +5,6 @@
 #ifndef PUMAROBOT_TEXTURE_H
 #define PUMAROBOT_TEXTURE_H
 
-
-#include <string>
-
 class Texture {
 
 

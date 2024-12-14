@@ -109,9 +109,7 @@ bool KinematicChain::doSegmentsIntersect(const glm::vec2& a1, const glm::vec2& a
 }
 
 
-void KinematicChain::addObstacle(Obstacle obstacle) {
-    obstacles.push_back(obstacle);
-
+void KinematicChain::updateObstacles() {
     for(int i = 0; i < resX; i++) {
         for(int j = 0; j < resY; j++) {
             float a1 = (i - 180) / 360.f * 2 * std::numbers::pi;
@@ -119,6 +117,11 @@ void KinematicChain::addObstacle(Obstacle obstacle) {
             obstacleMap[i][j] = checkCollision(a1, a2) ? 1.f : 0;
         }
     }
+}
+
+void KinematicChain::addObstacle(Obstacle obstacle) {
+    obstacles.push_back(obstacle);
+    updateObstacles();
 }
 
 std::vector<Obstacle> &KinematicChain::getObstacles() {
@@ -142,23 +145,35 @@ void KinematicChain::calculatePath() {
 
     if(testConfiguration(
             getIndexFromAngle(angles1[0]), getIndexFromAngle(angles2[0]),
-            getIndexFromAngle(vecTarget1[0]), getIndexFromAngle(vecTarget2[0])))
+            getIndexFromAngle(vecTarget1[0]), getIndexFromAngle(vecTarget2[0]))) {
+        startOption = 0;
+        endOption = 0;
         return;
+    }
 
     if(vecTarget2.size()>1 && testConfiguration(
             getIndexFromAngle(angles1[0]), getIndexFromAngle(angles2[0]),
-            getIndexFromAngle(vecTarget1[1]), getIndexFromAngle(vecTarget2[1])))
+            getIndexFromAngle(vecTarget1[1]), getIndexFromAngle(vecTarget2[1]))) {
+        startOption = 0;
+        endOption = 1;
         return;
+    }
 
     if(angles1.size()>1 && testConfiguration(
             getIndexFromAngle(angles1[1]), getIndexFromAngle(angles2[1]),
-            getIndexFromAngle(vecTarget1[0]), getIndexFromAngle(vecTarget2[0])))
+            getIndexFromAngle(vecTarget1[0]), getIndexFromAngle(vecTarget2[0]))) {
+        startOption = 1;
+        endOption = 0;
         return;
+    }
 
     if(angles1.size()>1 && vecTarget2.size()>1 && testConfiguration(
             getIndexFromAngle(angles1[1]), getIndexFromAngle(angles2[1]),
-            getIndexFromAngle(vecTarget1[1]), getIndexFromAngle(vecTarget2[1])))
+            getIndexFromAngle(vecTarget1[1]), getIndexFromAngle(vecTarget2[1]))) {
+        startOption = 1;
+        endOption = 1;
         return;
+    }
 }
 
 bool KinematicChain::testConfiguration(int a1, int a2, int target1, int target2) {
@@ -176,7 +191,6 @@ bool KinematicChain::testConfiguration(int a1, int a2, int target1, int target2)
 
     std::queue<std::tuple<int, int>> queue;
     queue.emplace(a1, a2);
-
     while(!queue.empty()) {
         auto [x, y] = queue.front();
         queue.pop();
@@ -194,8 +208,27 @@ bool KinematicChain::testConfiguration(int a1, int a2, int target1, int target2)
     }
 
     if(gradient[target1][target2] == 0) {
-        // Couldn't find a path
         return false;
+    }
+
+    targetGradient = std::array<std::array<int, resX>, resY>{};
+    targetGradient[target1][target2] = 1;
+    maxTargetGradient = 1;
+    queue.emplace(target1, target2);
+    while(!queue.empty()) {
+        auto [x, y] = queue.front();
+        queue.pop();
+        for(auto &dir : dirs) {
+            auto [dx, dy] = dir;
+            auto nextX = (x + dx + resX)%resX;
+            auto nextY = (y + dy + resY)%resY;
+            if(targetGradient[nextX][nextY] != 0 || obstacleMap[nextX][nextY] == 1.f) {
+                continue;
+            }
+            targetGradient[nextX][nextY] = targetGradient[x][y] + 1;
+            if(maxTargetGradient < targetGradient[nextX][nextY]) maxTargetGradient = targetGradient[nextX][nextY];
+            queue.emplace(nextX, nextY);
+        }
     }
 
     foundPath.clear();

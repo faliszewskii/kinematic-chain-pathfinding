@@ -91,18 +91,7 @@ void InputHandler::mouseButtonCallback(GLFWwindow *window, int button, int actio
                             tex[x][y] = glm::vec4(0, 0, 0, 1);
                     }
                 }
-                std::vector<float> flattenedArray;
-                flattenedArray.reserve(KinematicChain::resX * KinematicChain::resY * 4);
-                for (const auto& row : tex) {
-                    for (const auto& vec : row) {
-                        flattenedArray.push_back(vec.x);
-                        flattenedArray.push_back(vec.y);
-                        flattenedArray.push_back(vec.z);
-                        flattenedArray.push_back(1);
-                    }
-                }
-
-                appContext.parameterTexture->update2D(flattenedArray.data());
+                appContext.parametricMap->updateTexture(tex);
             }
         }
     }
