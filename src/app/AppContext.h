@@ -15,6 +15,7 @@
 #include "kinematicChain/KinematicChain.h"
 #include "entity/line/Line.h"
 #include "parametricMap/ParametricMap.h"
+#include "simulation/PathSimulation.h"
 
 struct AppContext {
     AppContext() = default;
@@ -32,6 +33,7 @@ struct AppContext {
     std::unique_ptr<Line> pathLine;
 
     std::unique_ptr<ParametricMap> parametricMap;
+    std::unique_ptr<PathSimulation> pathSimulation;
 
 
     bool draggingMouse;
@@ -43,7 +45,8 @@ struct AppContext {
     enum {
         ChoosingStart,
         ChoosingEnd,
-        DrawingObstacles
+        DrawingObstacles,
+        SimulatingPath
     } mode;
     Quad obstacleQuad;
     glm::vec2 currentMouse;

@@ -4,7 +4,6 @@
 
 #include <glm/geometric.hpp>
 #include <algorithm>
-#include <stack>
 #include <queue>
 #include "KinematicChain.h"
 
@@ -245,7 +244,7 @@ bool KinematicChain::testConfiguration(int a1, int a2, int target1, int target2)
                 currentGradient = gradient[nextX][nextY];
                 x = nextX;
                 y = nextY;
-                foundPath.emplace_back((x - 180) / 360.f * 2 * std::numbers::pi, (y - 180) / 360.f * 2 * std::numbers::pi);
+                foundPath.insert(foundPath.begin(), {(x - 180) / 360.f * 2 * std::numbers::pi, (y - 180) / 360.f * 2 * std::numbers::pi});
                 break;
             }
         }

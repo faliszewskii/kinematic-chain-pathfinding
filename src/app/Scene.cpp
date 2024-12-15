@@ -24,6 +24,7 @@ Scene::Scene(AppContext &appContext) : appContext(appContext) {
     appContext.mode = AppContext::ChoosingStart;
     appContext.pathLine = std::make_unique<Line>();
     appContext.parametricMap = std::make_unique<ParametricMap>();
+    appContext.pathSimulation = std::make_unique<PathSimulation>();
 }
 
 void Scene::update() {
@@ -56,10 +57,13 @@ void Scene::update() {
                     // TODO Add real time path calculation
                 }
                 break;
-            case AppContext::DrawingObstacles:
-
+            default:
                 break;
         }
+    }
+
+    if(appContext.mode == AppContext::SimulatingPath && appContext.pathSimulation->running) {
+        appContext.pathSimulation->nextStep();
     }
 }
 
@@ -92,36 +96,44 @@ void Scene::render() {
         appContext.unreachableSpace->render();
     }
 
-    if(appContext.kinematicChain->startCoords.has_value()) {
-        auto [q1, q2] = appContext.kinematicChain->findAngles(appContext.kinematicChain->startCoords.value());
-        if (!q1.empty()) {
-            float opacity = q1.size() == 1 || appContext.kinematicChain->startOption == 0? 1 : 0.2;
-            appContext.colorShader->setUniform("color", glm::vec4(0.2, 0.5, 0.3, opacity));
-            appContext.robotArm->render(*appContext.colorShader, appContext.kinematicChain->l1,
-                                        appContext.kinematicChain->l2, q1[0], q2[0]);
+    if(appContext.mode == AppContext::SimulatingPath && appContext.pathSimulation->running) {
+        float t = appContext.pathSimulation->t;
+        appContext.colorShader->setUniform("color", glm::vec4(0.2, 0.5 - 0.2*t, 0.3 + 0.2*t, 1.f));
+        appContext.robotArm->render(*appContext.colorShader, appContext.kinematicChain->l1,
+                                    appContext.kinematicChain->l2, appContext.pathSimulation->a1,
+                                    appContext.pathSimulation->a2);
+    } else {
+        if(appContext.kinematicChain->startCoords.has_value()) {
+            auto [q1, q2] = appContext.kinematicChain->findAngles(appContext.kinematicChain->startCoords.value());
+            if (!q1.empty()) {
+                float opacity = q1.size() == 1 || appContext.kinematicChain->startOption == 0? 1 : 0.2;
+                appContext.colorShader->setUniform("color", glm::vec4(0.2, 0.5, 0.3, opacity));
+                appContext.robotArm->render(*appContext.colorShader, appContext.kinematicChain->l1,
+                                            appContext.kinematicChain->l2, q1[0], q2[0]);
+            }
+            float opacity = appContext.kinematicChain->startOption == 1? 1 : 0.2;
+            if (q1.size() > 1) {
+                appContext.colorShader->setUniform("color", glm::vec4(0.2, 0.5, 0.3, opacity));
+                appContext.robotArm->render(*appContext.colorShader, appContext.kinematicChain->l1,
+                                            appContext.kinematicChain->l2, q1[1], q2[1]);
+            }
         }
-        float opacity = appContext.kinematicChain->startOption == 1? 1 : 0.2;
-        if (q1.size() > 1) {
-            appContext.colorShader->setUniform("color", glm::vec4(0.2, 0.5, 0.3, opacity));
-            appContext.robotArm->render(*appContext.colorShader, appContext.kinematicChain->l1,
-                                        appContext.kinematicChain->l2, q1[1], q2[1]);
-        }
-    }
 
 
-    if(appContext.kinematicChain->endCoords.has_value()){
-        auto [q1b, q2b] = appContext.kinematicChain->findAngles(appContext.kinematicChain->endCoords.value());
-        if (!q1b.empty()) {
-            float opacity = q1b.size() == 1 || appContext.kinematicChain->endOption == 0? 1 : 0.2;
-            appContext.colorShader->setUniform("color", glm::vec4(0.2, 0.3, 0.5, opacity));
-            appContext.robotArm->render(*appContext.colorShader, appContext.kinematicChain->l1,
-                                        appContext.kinematicChain->l2, q1b[0], q2b[0]);
-        }
-        if (q1b.size() > 1) {
-            float opacity = appContext.kinematicChain->endOption == 1? 1 : 0.2;
-            appContext.colorShader->setUniform("color", glm::vec4(0.2, 0.3, 0.5, opacity));
-            appContext.robotArm->render(*appContext.colorShader, appContext.kinematicChain->l1,
-                                        appContext.kinematicChain->l2, q1b[1], q2b[1]);
+        if(appContext.kinematicChain->endCoords.has_value()){
+            auto [q1b, q2b] = appContext.kinematicChain->findAngles(appContext.kinematicChain->endCoords.value());
+            if (!q1b.empty()) {
+                float opacity = q1b.size() == 1 || appContext.kinematicChain->endOption == 0? 1 : 0.2;
+                appContext.colorShader->setUniform("color", glm::vec4(0.2, 0.3, 0.5, opacity));
+                appContext.robotArm->render(*appContext.colorShader, appContext.kinematicChain->l1,
+                                            appContext.kinematicChain->l2, q1b[0], q2b[0]);
+            }
+            if (q1b.size() > 1) {
+                float opacity = appContext.kinematicChain->endOption == 1? 1 : 0.2;
+                appContext.colorShader->setUniform("color", glm::vec4(0.2, 0.3, 0.5, opacity));
+                appContext.robotArm->render(*appContext.colorShader, appContext.kinematicChain->l1,
+                                            appContext.kinematicChain->l2, q1b[1], q2b[1]);
+            }
         }
     }
 

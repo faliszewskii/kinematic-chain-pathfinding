@@ -72,7 +72,9 @@ set(APP_SRC
         src/opengl/texture/Texture.cpp
         src/app/entity/line/Line.h
         src/app/parametricMap/ParametricMap.h
-        src/app/parametricMap/ParametricMap.cpp)
+        src/app/parametricMap/ParametricMap.cpp
+        src/app/simulation/PathSimulation.cpp
+        src/app/simulation/PathSimulation.h)
 
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
